@@ -1,0 +1,64 @@
+services:
+  nginx:
+      image: nginx:latest
+      ports: 
+        - "80:80"
+      volumes:
+        - ./Akrav8Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        - ./html:/usr/share/nginx/html
+      depends_on:
+        rest-api: 
+          condition: service_started
+      networks:
+       - internal-network    
+           
+
+  rest-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.AKrav8Api
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: 
+      - "8080:8080"
+    networks:
+      #default:
+      - internal-network  
+      
+
+
+  db:
+    image: mysql:latest
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+     - db_data:/var/lib/mysql
+     - ./AKrav8mySQL/init.sql:/docker-entrypoint-initdb.d/init.sql  
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 7s
+      retries: 5  
+    networks:
+      #default:
+      - internal-network
+
+volumes:
+  # Volume for persisting MySQL data
+  db_data:  
+
+networks:
+  internal-network:
+    driver: bridge    

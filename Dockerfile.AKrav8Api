@@ -1,0 +1,28 @@
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+
+# Copy the solution file
+COPY AKrav8.sln ./
+
+# Copy the project file and restore dependencies
+WORKDIR /app
+COPY AKrav8Api/AKrav8Api.csproj AKrav8Api/
+WORKDIR /app/AKrav8Api
+# Ensure we're in the correct directory before restoring
+RUN pwd && ls
+RUN dotnet restore
+
+# Copy the rest of the API source code
+COPY AKrav8Api/ ./AKrav8Api/
+
+RUN dotnet publish AKrav8Api.csproj -c Release -o /app/out /p:DisableWorkloadAutoImport=true
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+COPY --from=build /app/out ./
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "AKrav8Api.dll"]
+
+

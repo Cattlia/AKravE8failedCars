@@ -1,0 +1,13 @@
+# ignorerer Environment (passord)
+
+.env
+.env.txt
+.vs/
+bin/
+obj/
+.dockerignore
+.vs/
+.vscode/
+*.upkg
+/publish/
+*.dll
